@@ -14,9 +14,17 @@ const validate = (req, res, next) => {
   }
   next();
 };
+const bookValidationRules = () => {
+  return [
+    body('title').notEmpty().withMessage('Title is required').isLength({max:50}).withMessage('Title can not exceed 50 characters'),
+    body('author').notEmpty().withMessage('Author is required').isLength({max:50}).withMessage('Author can not exceed 50 characters'),
+    body('year').notEmpty().withMessage('Year is required').isNumeric().withMessage('Year must be numeric').isLength({min: 4, max: 4}).withMessage('Enter a valid year'),
+    body('publisher').isLength({max:50}).withMessage('Publisher can not exceed 50 characters')
+  ];
+};
 
 module.exports = {
-  userValidationRules,
   loginValidationRules,
-  validate
+  bookValidationRules,
+  validate,
 };
