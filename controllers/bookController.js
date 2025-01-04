@@ -45,3 +45,16 @@ exports.deleteBook = async (req, res) => {
     res.status(500).json({ status: false, message: err.message });
   }
 };
+exports.getBookById = async (req, res) => {
+    try {
+        const book = await Book.findByPk(req.params.id, {
+            include: {
+                model: Image,
+                as: 'images'
+            }
+        });
+        res.status(200).json({status : true, data : book});
+    } catch(err) {
+        res.status(500).json({status: false, message: err.message});
+    }
+};
