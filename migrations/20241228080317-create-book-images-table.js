@@ -8,16 +8,18 @@ module.exports = {
         type: Sequelize.INTEGER,
         references: {
           model: 'Books',
-          key: 'id'
+          key: 'id',
         },
+        onDelete: 'CASCADE',
         allowNull: false
       },
       imageId: {
         type: Sequelize.INTEGER,
         references: {
           model: 'Images',
-          key: 'id'
+          key: 'id',
         },
+        onDelete: 'CASCADE',
         allowNull: false
       },
       createdAt: {

@@ -4,7 +4,14 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class BookImage extends Model {
     static associate(models) {
-      // Define associations here
+      BookImage.belongsTo(models.Book, {
+        foreignKey: 'bookId',
+        onDelete: 'CASCADE'
+      });
+      BookImage.belongsTo(models.Image, {
+        foreignKey: 'imageId',
+        onDelete: 'CASCADE'
+      });
     }
   }
   BookImage.init({
@@ -12,7 +19,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       references: {
         model: 'Books',
-        key: 'id'
+        key: 'id',
+        onDelete: 'CASCADE'
       },
       allowNull: false
     },
@@ -20,7 +28,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       references: {
         model: 'Images',
-        key: 'id'
+        key: 'id',
+        onDelete: 'CASCADE'
       },
       allowNull: false
     }

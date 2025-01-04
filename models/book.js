@@ -9,22 +9,41 @@ module.exports = (sequelize, DataTypes) => {
         through: 'BookImage',
         foreignKey: 'bookId',
         otherKey: 'imageId',
-        as: 'images'
+        as: 'images',
+        onDelete: 'CASCADE'
       });
     }
   }
-  Book.init({
-    title: DataTypes.STRING,
-    author: DataTypes.STRING,
-    publisher: DataTypes.STRING,
-    year: DataTypes.INTEGER,
-    status: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
+  Book.init(
+    {
+      title: DataTypes.STRING,
+      author: DataTypes.STRING,
+      publisher: DataTypes.STRING,
+      year: DataTypes.INTEGER,
+      status: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+    },
+    {
+      sequelize,
+      modelName: "Book",
+      hooks: {
+        beforeDestroy: async (book) => {
+          console.log('Book being destroyed'); // Reload the book instance to include its associations 
+          const loadedBook = await book.reload({ 
+            include: { model: sequelize.models.Image, as: 'images' } 
+          }); 
+          const images = loadedBook.images; 
+          // console.log(images); 
+          if (images) { 
+            await Promise.all(images.map(async (image) => { 
+              await image.destroy(); 
+            }));
+          }
+        }
+      },
     }
-  }, {
-    sequelize,
-    modelName: 'Book',
-  });
+  );
   return Book;
 };

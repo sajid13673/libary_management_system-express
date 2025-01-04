@@ -1,8 +1,8 @@
 const db = require('../models');
 const Book = db.Book;
 const Image = db.Image;
-const path = require('path');
-const saveImage = require('../utils/saveImage');
+const {saveFile} = require('../utils/manageFiles');
+const { where } = require('sequelize');
 
 exports.getBooks = async (req, res) => {
     try {
@@ -23,17 +23,25 @@ exports.createBook = async (req, res) => {
     console.log(file);
     const book = await Book.create(req.body);
     if (file) {
-      const destinationPath = path.join(
-        __dirname,
-        "../uploads/book",
-        file.originalname
-      );
-      const savedFile = await saveImage(file.path, destinationPath);
+      const originalname = file.originalname;
+      const savedFile = await saveFile(file.path, originalname, "books");
       const image = await Image.create(savedFile);
       await book.addImage(image);
     }
-    res.status(201).json({status : true, message : "Book created successfully"});
+    res
+      .status(201)
+      .json({ status: true, message: "Book created successfully" });
   } catch (err) {
-    res.status(400).json({ status : false, message: err.message });
+    res.status(400).json({ status: false, message: err.message });
+  }
+};
+
+exports.deleteBook = async (req, res) => {
+  try {
+    const book = await Book.findByPk(req.params.id);
+    book.destroy();
+    res.status(200).json({ status: true, message: "Book deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
   }
 };
