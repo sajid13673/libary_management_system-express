@@ -4,14 +4,16 @@ const port = 3000;
 const sequelize = require('./config/database')
 const authRoutes = require('./routes/authRoutes')
 const bookRoutes = require('./routes/bookRoutes')
+const memberRoutes = require('./routes/memberRoutes')
 const path = require('path')
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api', authRoutes)
-app.use('/api/books', bookRoutes)
+app.use('/api', authRoutes);
+app.use('/api/books', bookRoutes);
+app.use('/api/members', memberRoutes);
 
 sequelize.sync()
   .then(() => {

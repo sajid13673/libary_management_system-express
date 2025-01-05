@@ -1,11 +1,16 @@
 "use strict";
 const { Model } = require("sequelize");
 const bcrypt = require("bcryptjs") 
+const db = require("../models");
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
       // define association here
+      User.hasOne(models.Member, {
+        foreignKey: "userId",
+        as: "member"
+      })
     }
   }
   User.init(
