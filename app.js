@@ -5,6 +5,7 @@ const sequelize = require('./config/database')
 const authRoutes = require('./routes/authRoutes')
 const bookRoutes = require('./routes/bookRoutes')
 const memberRoutes = require('./routes/memberRoutes')
+const borrowingRoutes = require('./routes/borrowingRoutes')
 const path = require('path')
 
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/members', memberRoutes);
+app.use('/api/borrowings', borrowingRoutes);
 
 sequelize.sync()
   .then(() => {

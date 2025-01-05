@@ -1,5 +1,5 @@
 const { body, validationResult } = require('express-validator');
-const {User, Member} = require('../models');
+const {User, Member, Book} = require('../models');
 
 const loginValidationRules = () => {  
   return [
@@ -52,10 +52,31 @@ const memberValidationRules = () => {
     })
   ];
 };
+const borrowingValidation = () => {
+  return [
+    body('returnDate').isISO8601().withMessage('Please enter a valid date'),
+    body('dueDate').isISO8601().withMessage('Please enter a valid date'),
+    body('bookId').notEmpty().withMessage('Book ID is required'),
+    body('memberId').notEmpty().withMessage('Member ID is required'),
+    body('bookId').custom(async (bookId) => {
+      const book = await Book.findByPk(bookId);
+      if (!book) {
+        throw new Error('Book does not exist');
+      }
+    }),
+    body('memberId').custom(async (memberId) => {
+      const member = await Member.findByPk(memberId);
+      if (!member) {
+        throw new Error('Member does not exist');
+      }
+    }),
+  ]
+}
 
 module.exports = {
   loginValidationRules,
   bookValidationRules,
   memberValidationRules,
+  borrowingValidation,
   validate,
 };
