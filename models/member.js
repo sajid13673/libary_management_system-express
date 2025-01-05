@@ -32,6 +32,12 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Member',
+    hooks: {
+      beforeDestroy: async (member) => {
+        const user = await member.getUser();
+        await user.destroy();
+      }
+    }
   });
   return Member;
 };
