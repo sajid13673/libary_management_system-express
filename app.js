@@ -6,13 +6,14 @@ const authRoutes = require('./routes/authRoutes')
 const bookRoutes = require('./routes/bookRoutes')
 const memberRoutes = require('./routes/memberRoutes')
 const borrowingRoutes = require('./routes/borrowingRoutes')
-const path = require('path')
+const path = require('path');
+const authMiddleware = require('./middlewares/authMiddleware');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', authRoutes);
+app.use(authMiddleware)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/books', bookRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/borrowings', borrowingRoutes);
