@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
       Member.belongsTo(models.User,{
         foreignKey: "userId",
         as: "user"
+      });
+      Member.hasMany(models.Borrowing, {
+        foreignKey: "memberId",
+        as: "borrowings"
       })
     }
   }
