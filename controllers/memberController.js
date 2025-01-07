@@ -55,5 +55,17 @@ const deleteMember = async (req, res) => {
         res.status(500).json({status: false, message: err.message});
     }
 };
-
-module.exports = {getMembers, createMember, getMemberById, deleteMember}
+const updateMember = async (req, res) => {
+    try {
+        const member = await Member.findByPk(req.params.id);
+        if(!member){ 
+            res.status(404).json({status: false, message: "Member not found"});
+            return;
+        }
+        await member.update(req.body);
+        res.status(200).json({status: true, message: "Member updated successfully"});
+    } catch (err) {
+        res.status(500).json({status: false, message: err.message});
+    }
+}
+module.exports = {getMembers, createMember, getMemberById, deleteMember, updateMember}

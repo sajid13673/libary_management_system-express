@@ -16,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded);
+    // console.log('Decoded token:', decoded);
 
     // Fetch the full user details from the database
     const user = await User.findByPk(decoded.id);
@@ -27,7 +27,7 @@ const authMiddleware = async (req, res, next) => {
     req.user = user; // Attach full user object to the request
     next();
   } catch (error) {
-    console.log('Error during authentication:', error);
+    // console.log('Error during authentication:', error);
     res.status(401).json({ message: 'Invalid authentication token' });
   }
 };

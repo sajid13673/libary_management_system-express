@@ -1,11 +1,12 @@
 const express = require('express');
-const { getMembers, createMember,getMemberById, deleteMember } = require('../controllers/memberController');
+const { getMembers, createMember,getMemberById, deleteMember, updateMember } = require('../controllers/memberController');
 const router = express.Router();
-const {memberValidationRules, validate} = require('../middlewares/validationMiddlewares');
+const {validate, createMemberValidationRules, updateMemberValidationRules} = require('../middlewares/validationMiddlewares');
 
 router.get('/', getMembers);
-router.post('/', memberValidationRules(), validate, createMember);
+router.post('/', createMemberValidationRules(), validate, createMember);
 router.get('/:id', getMemberById);
 router.delete('/:id', deleteMember);
+router.put('/:id', updateMemberValidationRules(), validate, updateMember);
 
 module.exports = router;

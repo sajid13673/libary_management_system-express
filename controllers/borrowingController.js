@@ -45,5 +45,18 @@ const deleteBorrowing = async (req, res) => {
     }
 };
 
+const updateBorrowing = async (req, res) => {
+    try {
+        const borrowing = await Borrowing.findByPk(req.params.id);
+        if(!borrowing){ 
+            res.status(404).json({status: false, message: "Borrowing not found"});
+            return;
+        }
+        await borrowing.update(req.body);
+        res.status(200).json({status: true, message: "Borrowing updated successfully"});
+    } catch (err) {
+        res.status(500).json({status: false, message: err.message});
+    }
+}
 
-module.exports = {getBorrowings, createBorrowing, getBorrowingById, deleteBorrowing}
+module.exports = {getBorrowings, createBorrowing, getBorrowingById, deleteBorrowing, updateBorrowing}

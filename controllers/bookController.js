@@ -58,3 +58,16 @@ exports.getBookById = async (req, res) => {
         res.status(500).json({status: false, message: err.message});
     }
 };
+exports.updateBook = async (req, res) => {
+  try {
+    const book = await Book.findByPk(req.params.id);
+    if(!book){
+      res.status(404).json({status: false, message: 'Book not found'});
+      return;
+    }
+    await book.update(req.body);
+    res.status(200).json({status: true, message: "Book updated successfully"});
+  } catch (err) {
+    res.status(500).json({status: false, message: err});
+  }
+};
