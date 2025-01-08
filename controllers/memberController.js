@@ -4,8 +4,19 @@ const User = db.User;
 
 const getMembers = async (req, res) => {
     try{
-        members = await Member.findAll();
-        res.status(200).json({status : true, data: members});
+        const page = parseInt(req.query.page) || 1; 
+          const perPage = parseInt(req.query.perPage) || 10;
+            const totalItems = await Member.count(); 
+            const totalPages = Math.ceil(totalItems / perPage); 
+            const books = await Member.findAll({
+              offset: (page - 1) * perPage,
+              limit: perPage,
+              include: {
+                model: User,
+                as: "user"
+              }
+            }); 
+            res.json({ status:true, page, perPage, totalPages, totalItems, data:books });
     } catch(err){
         res.status(500).json({status: false, message: err.message});
     }

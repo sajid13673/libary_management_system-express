@@ -6,13 +6,19 @@ const { where } = require('sequelize');
 
 exports.getBooks = async (req, res) => {
     try {
-        const books = await Book.findAll({
-            include: {
-                model: Image,
-                as: 'images'
-            }
-        });
-        res.status(200).json({status : true, data : books});
+          const page = parseInt(req.query.page) || 1; 
+          const perPage = parseInt(req.query.perPage) || 10;
+            const totalItems = await Book.count(); 
+            const totalPages = Math.ceil(totalItems / perPage); 
+            const books = await Book.findAll({
+              offset: (page - 1) * perPage,
+              limit: perPage,
+              include: {
+                        model: Image,
+                        as: 'images'
+                    }
+            }); 
+            res.json({ status:true, page, perPage, totalPages, totalItems, data:books });
     } catch(err) {
         res.status(500).json({status: false, message: err.message});
     }
