@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models'); // Adjust your model path accordingly
+const { User, BlacklistToken } = require('../models'); // Ensure BlacklistToken is included in your models
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -14,9 +14,14 @@ const authMiddleware = async (req, res, next) => {
     return res.status(401).json({ message: 'Invalid authentication token format' });
   }
 
+  // Check if the token is blacklisted
+  const blacklistedToken = await BlacklistToken.findOne({ where: { token } });
+  if (blacklistedToken) {
+    return res.status(401).json({ message: 'Token has been blacklisted' });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // console.log('Decoded token:', decoded);
 
     // Fetch the full user details from the database
     const user = await User.findByPk(decoded.id);
@@ -27,7 +32,6 @@ const authMiddleware = async (req, res, next) => {
     req.user = user; // Attach full user object to the request
     next();
   } catch (error) {
-    // console.log('Error during authentication:', error);
     res.status(401).json({ message: 'Invalid authentication token' });
   }
 };

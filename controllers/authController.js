@@ -1,6 +1,33 @@
-const {User, Member, Borrowing} = require("../models");
+const {User, Member, Borrowing, BlacklistToken} = require("../models");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+exports.logout = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ message: 'Authentication token is missing' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  // Decode the token to get the expiration time
+  const decoded = jwt.decode(token);
+  if (!decoded) {
+    return res.status(400).json({ message: 'Invalid token' });
+  }
+
+  const expiresAt = new Date(decoded.exp * 1000);
+
+  try {
+    // Add the token to the blacklist
+    await BlacklistToken.create({ token, expiresAt });
+
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
