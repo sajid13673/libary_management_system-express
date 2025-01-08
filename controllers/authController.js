@@ -1,33 +1,6 @@
-const {User, Member, Borrowing, BlacklistToken} = require("../models");
+const {User, Member, Borrowing, Book, BlacklistToken} = require("../models");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-exports.logout = async (req, res) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: 'Authentication token is missing' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  // Decode the token to get the expiration time
-  const decoded = jwt.decode(token);
-  if (!decoded) {
-    return res.status(400).json({ message: 'Invalid token' });
-  }
-
-  const expiresAt = new Date(decoded.exp * 1000);
-
-  try {
-    // Add the token to the blacklist
-    await BlacklistToken.create({ token, expiresAt });
-
-    res.status(200).json({ message: 'Logged out successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
-  }
-};
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -44,10 +17,35 @@ exports.login = async (req, res) => {
       }
     );
     console.log("id : "+user.id+" role : "+user.role);
-    
-    res.json({ token });
+    res.json({ status:true, access_token: token, role: user.role });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+exports.logout = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ status: false, message: 'Authentication token is missing' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  // Decode the token to get the expiration time
+  const decoded = jwt.decode(token);
+  if (!decoded) {
+    return res.status(400).json({ status: false, message: 'Invalid token' });
+  }
+
+  const expiresAt = new Date(decoded.exp * 1000);
+
+  try {
+    // Add the token to the blacklist
+    await BlacklistToken.create({ token, expiresAt });
+
+    res.status(200).json({ status: true, message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ status: false, message: 'Server error', error });
   }
 };
 
@@ -62,7 +60,11 @@ exports.profile = async (req, res) => {
           model: Borrowing,
           as: 'borrowings',
           where: { status: true },
-          required: false // This ensures borrowings with status true are included if they exist, but still include the member
+          required: false, // This ensures borrowings with status true are included if they exist, but still include the member
+          include:{
+            model: Book,
+            as: 'book'
+          }
         }
       }
     });
