@@ -18,6 +18,10 @@ module.exports = (sequelize, DataTypes) => {
       Member.hasMany(models.Borrowing, {
         foreignKey: "memberId",
         as: "borrowings"
+      });
+      Member.hasOne(models.Image, {
+        foreignKey: 'memberId',
+        as: 'image'
       })
     }
   }

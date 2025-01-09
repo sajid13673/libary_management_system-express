@@ -1,6 +1,5 @@
-const db = require('../models');
-const Member = db.Member;
-const User = db.User;
+const {Member, User, Image} = require('../models');
+const { saveFile } = require('../utils/manageFiles');
 
 const getMembers = async (req, res) => {
     try{
@@ -11,10 +10,16 @@ const getMembers = async (req, res) => {
             const books = await Member.findAll({
               offset: (page - 1) * perPage,
               limit: perPage,
-              include: {
+              include: [
+                {
                 model: User,
                 as: "user"
+                },
+              {
+                model: Image,
+                as: 'image'
               }
+            ]
             }); 
             res.json({ status:true, page, perPage, totalPages, totalItems, data:books });
     } catch(err){
@@ -24,8 +29,9 @@ const getMembers = async (req, res) => {
 
 const createMember = async (req, res) => {
   try {
-    console.log(req.body);
-    await User.create(
+    console.log(req.file);
+    const file = req.file;
+    const user = await User.create(
       {
         email: req.body.email,
         password: req.body.password,
@@ -42,6 +48,13 @@ const createMember = async (req, res) => {
         },
       }
     );
+    if(file){
+      const originalname = file.originalname;
+      const savedFile = await saveFile(file.path, originalname, 'members');
+      const image = await Image.create(savedFile);
+      await user.member.reload();
+      await user.member.setImage(image);
+    }
 
     res.status(200).json({ status: true, message: "Member created successfully" });
   } catch (err) {

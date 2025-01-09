@@ -12,6 +12,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'imageId', 
         otherKey: 'bookId', 
         as: 'books' }); 
+      Image.belongsTo(models.Member, {
+        foreignKey: 'memberId', 
+        as: 'member'
+      })
     }
   }
   Image.init({
