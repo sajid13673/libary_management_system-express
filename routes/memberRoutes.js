@@ -9,6 +9,6 @@ router.get('/', getMembers);
 router.post('/', upload.single('image'), createMemberValidationRules(), validate, createMember);
 router.get('/:id', getMemberById);
 router.delete('/:id', deleteMember);
-router.put('/:id', updateMemberValidationRules(), validate, updateMember);
+router.put('/:id', upload.single('image'), updateMemberValidationRules(), validate, updateMember);
 
 module.exports = router;

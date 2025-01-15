@@ -81,12 +81,26 @@ const deleteMember = async (req, res) => {
 };
 const updateMember = async (req, res) => {
     try {
-        const member = await Member.findByPk(req.params.id);
+        const member = await Member.findByPk(req.params.id, {
+          include: {
+            model: Image,
+            as: "image",
+          },
+        });
         if(!member){ 
             res.status(404).json({status: false, message: "Member not found"});
             return;
         }
         await member.update(req.body);
+        if(req.file) {
+          const originalname = req.file.originalname;
+          const savedFile = await saveFile(req.file.path, originalname,'members');
+          if(member.image){
+            await member.image.destroy();
+          }
+          const image = await Image.create(savedFile);
+          await member.setImage(image);
+        }
         res.status(200).json({status: true, message: "Member updated successfully"});
     } catch (err) {
         res.status(500).json({status: false, message: err.message});
