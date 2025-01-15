@@ -10,5 +10,5 @@ router.get('/', getBooks);
 router.get('/:id', getBookById);
 router.post('/', upload.single('image'), createBookValidationRules(), validate, createBook);
 router.delete('/:id', deleteBook);
-router.put('/:id', updateBookValidationRules(), validate, updateBook);
+router.put('/:id', upload.single('image'), updateBookValidationRules(), validate, updateBook);
 module.exports = router;

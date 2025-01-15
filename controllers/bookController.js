@@ -66,12 +66,31 @@ exports.getBookById = async (req, res) => {
 };
 exports.updateBook = async (req, res) => {
   try {
-    const book = await Book.findByPk(req.params.id);
+    const book = await Book.findByPk(req.params.id, {
+      include: {
+          model: Image,
+          as: 'images'
+      }
+    });
     if(!book){
       res.status(404).json({status: false, message: 'Book not found'});
       return;
     }
     await book.update(req.body);
+    if(req.file){
+      const originalname = req.file.originalname;
+      const savedFile = await saveFile(req.file.path, originalname, "books");
+      const images = book.images;
+      console.log(images);
+      
+      if (images) { 
+        await Promise.all(images.map(async (image) => { 
+          await image.destroy(); 
+        }));
+      }
+      const image = await Image.create(savedFile);
+      book.addImage(image)
+    }
     res.status(200).json({status: true, message: "Book updated successfully"});
   } catch (err) {
     res.status(500).json({status: false, message: err});
