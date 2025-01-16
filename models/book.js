@@ -12,6 +12,10 @@ module.exports = (sequelize, DataTypes) => {
         as: 'images',
         onDelete: 'CASCADE'
       });
+      Book.hasMany(models.Borrowing, {
+        foreignKey: 'bookId',
+        as: 'borrowings'
+      });
     }
   }
   Book.init(

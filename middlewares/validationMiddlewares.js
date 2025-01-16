@@ -83,8 +83,8 @@ const updateMemberValidationRules = () => {
 };
 const createBorrowingValidationRules = () => {
   return [
-    body('returnDate').isISO8601().withMessage('Please enter a valid date'),
-    body('dueDate').isISO8601().withMessage('Please enter a valid date'),
+    body('returnDate').optional().isISO8601().withMessage('Please enter a valid date'),
+    body('dueDate').optional().isISO8601().withMessage('Please enter a valid date'),
     body('bookId').notEmpty().withMessage('Book ID is required'),
     body('memberId').notEmpty().withMessage('Member ID is required'),
     body('bookId').custom(async (bookId) => {

@@ -1,6 +1,4 @@
-const db = require('../models');
-const Book = db.Book;
-const Image = db.Image;
+const {Book, Image, Borrowing} = require('../models');
 const {saveFile} = require('../utils/manageFiles');
 const { where } = require('sequelize');
 
@@ -13,12 +11,28 @@ exports.getBooks = async (req, res) => {
             const books = await Book.findAll({
               offset: (page - 1) * perPage,
               limit: perPage,
-              include: {
-                        model: Image,
-                        as: 'images'
-                    }
+              include: [
+                {
+                  model: Image,
+                  as: "images",
+                },
+                {
+                  model: Borrowing,
+                  as: "borrowings",
+                },
+              ],
             }); 
-            res.json({ status:true, page, perPage, totalPages, totalItems, data:books });
+            const booksWithBorrowingStatus = books.map((book) => {
+              const hasActiveBorrowing = book.borrowings.some(
+                (borrowing) => borrowing.status === true
+              );
+              const { borrowings, ...bookWithoutBorrowings } = book.toJSON();
+              return {
+                ...bookWithoutBorrowings,
+                activeBorrowings: hasActiveBorrowing ? true : false,
+              };
+            });
+            res.json({ status:true, page, perPage, totalPages, totalItems, data:booksWithBorrowingStatus });
     } catch(err) {
         res.status(500).json({status: false, message: err.message});
     }

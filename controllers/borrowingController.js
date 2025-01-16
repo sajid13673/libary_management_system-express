@@ -1,4 +1,5 @@
-const {Borrowing, Member, Book} = require('../models')
+const {Borrowing, Member, Book} = require('../models');
+const borrowing = require('../models/borrowing');
 
 const getBorrowings = async (req, res) => {
   try {
@@ -27,6 +28,17 @@ const getBorrowings = async (req, res) => {
 };
 const createBorrowing = async (req, res) => {
     try {
+        const book = await Book.findByPk(req.body.bookId, {
+          include: {
+            model: Borrowing,
+            as: "borrowings",
+          },
+        });
+        const hasActiveBorrowings = book.borrowings.some(borrowing => borrowing.status === true); 
+        if(hasActiveBorrowings){
+            res.status(400).json({status: false, message: 'Book already has an active borrowing'});
+            return;
+        }
         await Borrowing.create(req.body);
         res.status(201).json({status: true, message: 'Borrowing created successfully'});
     } catch (err) {
