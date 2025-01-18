@@ -1,5 +1,4 @@
 const {Borrowing, Member, Book} = require('../models');
-const borrowing = require('../models/borrowing');
 
 const getBorrowings = async (req, res) => {
   try {
@@ -28,6 +27,8 @@ const getBorrowings = async (req, res) => {
 };
 const createBorrowing = async (req, res) => {
     try {
+        console.log(req.body);
+                
         const book = await Book.findByPk(req.body.bookId, {
           include: {
             model: Borrowing,
@@ -40,7 +41,7 @@ const createBorrowing = async (req, res) => {
             return;
         }
         await Borrowing.create(req.body);
-        res.status(201).json({status: true, message: 'Borrowing created successfully'});
+        res.status(201).json({status: false, message: 'Borrowing created successfully'});
     } catch (err) {
         res.status(500).json({status: false, message: err.message});
     }

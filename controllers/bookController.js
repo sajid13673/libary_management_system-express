@@ -1,7 +1,6 @@
 const {Book, Image, Borrowing} = require('../models');
 const {saveFile} = require('../utils/manageFiles');
-const { where } = require('sequelize');
-
+const { Op } = require('sequelize');
 exports.getBooks = async (req, res) => {
     try {
           const page = parseInt(req.query.page) || 1; 
@@ -110,3 +109,17 @@ exports.updateBook = async (req, res) => {
     res.status(500).json({status: false, message: err});
   }
 };
+exports.getBooksStats = async (req, res) => {
+  try {
+    // res.json('helele ')
+    const totalBooks = await Book.count();
+    const issuedBooks = await Borrowing.count({where : {status: true}});
+    const availabeBooks = totalBooks - issuedBooks;
+    const overdueBooks = await Borrowing.count({
+      where: { status: true, dueDate: { [Op.lt]: new Date() } },
+    });
+    res.status(200).json({totalBooks, issuedBooks, availabeBooks, overdueBooks});
+  } catch (err) {
+    res.status(500).json({status: false, message: err});
+  }
+}
