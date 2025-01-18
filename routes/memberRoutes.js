@@ -3,8 +3,10 @@ const { getMembers, createMember,getMemberById, deleteMember, updateMember } = r
 const router = express.Router();
 const {validate, createMemberValidationRules, updateMemberValidationRules} = require('../middlewares/validationMiddlewares');
 const multer = require('multer');
+const roleMiddleware = require('../middlewares/roleMiddleware');
 const upload = multer({dest: 'uploads/'})
 
+router.use(roleMiddleware('admin'));
 router.get('/', getMembers);
 router.post('/', upload.single('image'), createMemberValidationRules(), validate, createMember);
 router.get('/:id', getMemberById);

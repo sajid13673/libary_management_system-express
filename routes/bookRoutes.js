@@ -3,10 +3,12 @@ const router = express.Router();
 const {getBooks, createBook, deleteBook, getBookById, updateBook, getBooksStats} = require('../controllers/bookController');
 const {createBookValidationRules, validate, updateBookValidationRules} = require('../middlewares/validationMiddlewares')
 const multer = require('multer');
+const roleMiddleware = require('../middlewares/roleMiddleware')
 
 const upload = multer({dest: 'uploads/'})
 
 router.get('/', getBooks);
+router.use(roleMiddleware('admin'));
 router.get('/stats', getBooksStats);
 router.get('/:id', getBookById);
 router.post('/', upload.single('image'), createBookValidationRules(), validate, createBook);

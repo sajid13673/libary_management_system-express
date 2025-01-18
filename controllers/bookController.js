@@ -114,11 +114,11 @@ exports.getBooksStats = async (req, res) => {
     // res.json('helele ')
     const totalBooks = await Book.count();
     const issuedBooks = await Borrowing.count({where : {status: true}});
-    const availabeBooks = totalBooks - issuedBooks;
+    const availableBooks = totalBooks - issuedBooks;
     const overdueBooks = await Borrowing.count({
       where: { status: true, dueDate: { [Op.lt]: new Date() } },
     });
-    res.status(200).json({totalBooks, issuedBooks, availabeBooks, overdueBooks});
+    res.status(200).json({totalBooks, issuedBooks, availableBooks, overdueBooks});
   } catch (err) {
     res.status(500).json({status: false, message: err});
   }
