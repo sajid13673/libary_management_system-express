@@ -1,4 +1,4 @@
-const {Member, User, Image} = require('../models');
+const {Member, User, Image, Borrowing, Book} = require('../models');
 const { saveFile } = require('../utils/manageFiles');
 
 const getMembers = async (req, res) => {
@@ -63,12 +63,42 @@ const createMember = async (req, res) => {
 };
 
 const getMemberById = async (req, res) => {
-    try {
-        const member = await Member.findByPk(req.params.id)
-        res.status(200).json({status : true, data: member})
-    } catch (err) {
-        res.status(500).json({status: false, message: err.message})
+  try {
+    console.log("query member");
+    console.log(req.query.borrowings);
+
+    const borrowingPage = parseInt(req.query.borrowingPage) || 1;
+    const borrowingsPerPage = parseInt(req.query.borrowingsPerPage) || 5; // Default value or set as needed
+    const includeBorrowings = req.query.borrowings ? [
+      {
+        model: Borrowing,
+        as: 'borrowings',
+        limit: borrowingsPerPage,
+        offset: (borrowingPage - 1) * borrowingsPerPage,
+        order: [['createdAt', 'DESC']],
+        required: false,          
+        include: {
+          model: Book,
+          as: 'book',
+          required: false          
+        }
+      }
+    ] : [];
+
+    console.log(includeBorrowings);
+       
+    const member = await Member.findByPk(req.params.id, { include: includeBorrowings });
+
+    if(req.query.borrowings){
+      const totalItems = await Borrowing.count({ where: { memberId: req.params.id } });
+      const totalPages = Math.ceil(totalItems / borrowingsPerPage); 
+      res.status(200).json({ status: true, data: member, borrowingPage, borrowingsPerPage, totalItems, totalPages });
+      return;
     }
+    res.status(200).json({ status: true, data: member });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
 };
 const deleteMember = async (req, res) => {
     try {
