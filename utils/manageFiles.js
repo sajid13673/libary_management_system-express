@@ -10,10 +10,15 @@ const path = require('path');
  */
 
 const saveFile = async (filePath, originalname, subFolder) => {
+  const now = new Date();
+  const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+  const modifiedOriginalname = originalname.replace(/ /g, "_");
+  const newFileName = `${formattedDate}_${modifiedOriginalname}`;
+  
   const destinationPath = path.join(
     __dirname,
     `../uploads/${subFolder}`,
-    originalname
+    newFileName
   );
   const directory = path.dirname(destinationPath);
   try {
