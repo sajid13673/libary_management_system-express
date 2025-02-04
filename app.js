@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes')
 const bookRoutes = require('./routes/bookRoutes')
 const memberRoutes = require('./routes/memberRoutes')
 const borrowingRoutes = require('./routes/borrowingRoutes')
+const fineRoutes = require('./routes/fineRoutes')
 const path = require('path');
 const authMiddleware = require('./middlewares/authMiddleware');
 const clearExpiredTokens = require('./utils/clearExpiredTokens'); 
@@ -40,6 +41,7 @@ app.use(authMiddleware)
 app.use('/api/books', bookRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/borrowings', borrowingRoutes);
+app.use('/api/fines', fineRoutes);
 
 //Scheduled task to clear the expired blacklisted tokens
 cron.schedule('0 0 * * *', clearExpiredTokens);
