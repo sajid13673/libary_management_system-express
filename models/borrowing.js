@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'memberId',
         as: 'member'
       })
+      Borrowing.hasOne(models.Fine, {
+        foreignKey: 'borrowingId',
+        as: 'fine'
+      })
     }
   }
   Borrowing.init({
