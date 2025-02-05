@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
       Member.hasOne(models.Image, {
         foreignKey: 'memberId',
         as: 'image'
+      });
+      Member.hasMany(models.Fine, {
+        foreignKey: 'memberId',
+        as: 'fine',
       })
     }
   }

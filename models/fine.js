@@ -13,15 +13,32 @@ module.exports = (sequelize, DataTypes) => {
       Fine.belongsTo(models.Borrowing, {
         foreignKey: 'borrowingId',
         as: 'borrowing'
-      })
+      });
+      Fine.belongsTo(models.Member, {
+        foreignKey:'memberId',
+        as:'member'
+      });
     }
   }
   Fine.init({
     amount: DataTypes.STRING,
     days: DataTypes.INTEGER,
     isPaid: DataTypes.BOOLEAN,
-    borrowingId: DataTypes.INTEGER,
-    memberId: DataTypes.INTEGER
+    borrowingId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Borrowings',
+        key: 'id'
+      },
+    },
+    memberId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Members',
+        key: 'id'
+      },
+      onDelete: 'CASCADE' 
+    }
   }, {
     sequelize,
     modelName: 'Fine',

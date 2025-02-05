@@ -21,10 +21,21 @@ module.exports = {
         defaultValue: false
       },
       borrowingId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Borrowings',
+          key: 'id'
+        },
+        allowNull: false,
       },
       memberId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'Members',
+          key: 'id'
+        },
+        allowNull: false,
+        onDelete: 'CASCADE'
       },
       createdAt: {
         allowNull: false,
