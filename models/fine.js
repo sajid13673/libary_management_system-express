@@ -18,6 +18,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey:'memberId',
         as:'member'
       });
+      Fine.hasOne(models.Payment, {
+        foreignKey: 'fineId',
+        as: 'payment'
+      });
     }
   }
   Fine.init({
