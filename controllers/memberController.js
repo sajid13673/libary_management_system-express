@@ -7,7 +7,7 @@ const getMembers = async (req, res) => {
           const perPage = parseInt(req.query.perPage) || 10;
             const totalItems = await Member.count(); 
             const totalPages = Math.ceil(totalItems / perPage); 
-            const books = await Member.findAll({
+            const members = await Member.findAll({
               offset: (page - 1) * perPage,
               limit: perPage,
               include: [
@@ -21,7 +21,7 @@ const getMembers = async (req, res) => {
               }
             ]
             }); 
-            res.json({ status:true, page, perPage, totalPages, totalItems, data:books });
+            res.json({ status:true, page, perPage, totalPages, totalItems, data:members });
     } catch(err){
         res.status(500).json({status: false, message: err.message});
     }
