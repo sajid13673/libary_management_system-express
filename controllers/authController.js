@@ -1,7 +1,7 @@
-const {User, Member, Borrowing, Book, BlacklistToken} = require("../models");
+const {User, Member, Borrowing, Book, BlacklistToken, UserRefreshToken} = require("../models");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const { v4: uuidv4 } = require('uuid');
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -9,15 +9,42 @@ exports.login = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-    const token = jwt.sign(
+
+    const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
+      { expiresIn: "1m" }
     );
-    console.log("id : "+user.id+" role : "+user.role);
-    res.json({ status:true, access_token: token, role: user.role });
+
+    const refreshToken = uuidv4();
+
+    await UserRefreshToken.create({ userId: user.id, refreshToken });
+
+    res.json({ status: true, access_token: accessToken, refresh_token: refreshToken, role: user.role });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+exports.refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  try {
+    const storedToken = await UserRefreshToken.findOne({ where: { refreshToken } });
+    if (!storedToken) {
+      return res.status(400).json({ message: "Invalid refresh token" });
+    }
+
+    const user = await User.findByPk(storedToken.userId);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({ status: true, access_token: accessToken });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
