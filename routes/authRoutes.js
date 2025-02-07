@@ -6,6 +6,6 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.post('/login', login)
 router.get('/profile', authMiddleware, profile)
 router.post('/refresh-token', refreshToken)
-router.get('/logout', logout)
+router.post('/logout', logout)
 
 module.exports = router;

@@ -55,21 +55,21 @@ exports.logout = async (req, res) => {
   if (!authHeader) {
     return res.status(401).json({ status: false, message: 'Authentication token is missing' });
   }
-
   const token = authHeader.split(' ')[1];
-
   // Decode the token to get the expiration time
   const decoded = jwt.decode(token);
   if (!decoded) {
     return res.status(400).json({ status: false, message: 'Invalid token' });
   }
-
   const expiresAt = new Date(decoded.exp * 1000);
-
   try {
+    const {refreshToken} = req.body;
     // Add the token to the blacklist
     await BlacklistToken.create({ token, expiresAt });
-
+    // Delete the refresh token
+    if(refreshToken) {
+      await UserRefreshToken.destroy({where: {refreshToken}});
+    }
     res.status(200).json({ status: true, message: 'Logged out successfully' });
   } catch (error) {
     res.status(500).json({ status: false, message: 'Server error', error });
