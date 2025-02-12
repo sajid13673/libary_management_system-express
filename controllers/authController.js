@@ -106,4 +106,17 @@ exports.profile = async (req, res) => {
   }
 };
 
-
+exports.changePassword = async (req, res) => {
+  try {
+    const user = req.user;
+    const { currentPassword, newPassword } = req.body;
+    if (await bcrypt.compare(currentPassword, user.password)) {
+      user.update({ password: newPassword });
+      res.status(200).json({status: true, message: "Password changed successfully"});
+      return;
+    }
+    res.status(400).json({status: false, message: "Incorrect password"});
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+};
