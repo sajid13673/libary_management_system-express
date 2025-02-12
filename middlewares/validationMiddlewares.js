@@ -108,6 +108,25 @@ const updateBorrowingValidationRules = () => {
     body('status').optional().notEmpty().withMessage('Status can not be empty').isBoolean().withMessage('Status must be a boolean')
   ]
 }
+const changePasswordValidationRules = () => {
+  return [
+    body('currentPassword').notEmpty().withMessage('Current Password is required'),
+    body('newPassword').notEmpty().withMessage('New Password is required'),
+    body('confirmPassword').notEmpty().withMessage('Confirm Password is required'),
+    body('newPassword').custom((password, { req }) => {
+      if (password === req.body.currentPassword) {
+        throw new Error('New password cannot be the same as old password');
+      }
+      return true;
+    }),
+    body('confirmPassword').custom((confirmPassword, { req }) => {
+      if (confirmPassword !== req.body.newPassword) {
+        throw new Error('Confirm Password does not match the New Password');
+      }
+      return true;
+    })
+  ]
+}
 
 module.exports = {
   loginValidationRules,
@@ -117,5 +136,6 @@ module.exports = {
   updateMemberValidationRules,
   createBorrowingValidationRules,
   updateBorrowingValidationRules,
+  changePasswordValidationRules,
   validate,
 };
