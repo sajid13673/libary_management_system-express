@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       });
       Member.hasMany(models.Fine, {
         foreignKey: 'memberId',
-        as: 'fine',
+        as: 'fines',
       })
     }
   }
