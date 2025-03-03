@@ -4,9 +4,8 @@ const getFines = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.perPage) || 10;
-    const totalItems = await Fine.count();
-    const totalPages = Math.ceil(totalItems / perPage);
-    const fines = await Fine.findAll({
+    const type = req.query.type || 'all';
+    const queryOptions = {
       offset: (page - 1) * perPage,
       limit: perPage,
       include: [
@@ -19,10 +18,16 @@ const getFines = async (req, res) => {
           as: "borrowing",
         },
       ],
-    });
+    };
+    if(type !== 'all'){
+      queryOptions.where = {isPaid: type === 'paid' ? true : false}
+    }
+    const fines = await Fine.findAll(queryOptions);
+    const totalItems = await Fine.count(queryOptions);
+    const totalPages = Math.ceil(totalItems / perPage);
     res
       .status(200)
-      .json({ status: true, page, perPage, totalPages, data: fines });
+      .json({ status: true, page, perPage, totalPages, totalItems, data: fines });
   } catch (err) {
     res.status(500).json({ status: false, message: err.message });
   }
