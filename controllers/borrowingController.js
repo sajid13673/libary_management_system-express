@@ -2,11 +2,10 @@ const {Borrowing, Member, Book} = require('../models');
 
 const getBorrowings = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1; 
+    const page = parseInt(req.query.page) || 1;
           const perPage = parseInt(req.query.perPage) || 10;
-            const totalItems = await Borrowing.count(); 
-            const totalPages = Math.ceil(totalItems / perPage); 
-            const borrowings = await Borrowing.findAll({
+          const type = req.query.type || 'all';
+            const queryOptions  = {
               offset: (page - 1) * perPage,
               limit: perPage,
               include: [
@@ -19,7 +18,13 @@ const getBorrowings = async (req, res) => {
                 as: "member"
               }
             ]
-            }); 
+            };
+            if(type !== 'all'){
+              queryOptions.where = {status: type === 'returned' ? false : true}
+            }
+            const totalItems = await Borrowing.count(queryOptions);
+            const totalPages = Math.ceil(totalItems / perPage);
+            const borrowings = await Borrowing.findAll(queryOptions);
             res.json({ status:true, page, perPage, totalPages, totalItems, data:borrowings });
   } catch (err) {
     res.status(500).json({ status: false, message: err.message });
@@ -28,14 +33,14 @@ const getBorrowings = async (req, res) => {
 const createBorrowing = async (req, res) => {
     try {
         console.log(req.body);
-                
+
         const book = await Book.findByPk(req.body.bookId, {
           include: {
             model: Borrowing,
             as: "borrowings",
           },
         });
-        const hasActiveBorrowings = book.borrowings.some(borrowing => borrowing.status === true); 
+        const hasActiveBorrowings = book.borrowings.some(borrowing => borrowing.status === true);
         if(hasActiveBorrowings){
             res.status(400).json({status: false, message: 'Book already has an active borrowing'});
             return;
@@ -67,7 +72,7 @@ const deleteBorrowing = async (req, res) => {
 const updateBorrowing = async (req, res) => {
     try {
         const borrowing = await Borrowing.findByPk(req.params.id);
-        if(!borrowing){ 
+        if(!borrowing){
             res.status(404).json({status: false, message: "Borrowing not found"});
             return;
         }
