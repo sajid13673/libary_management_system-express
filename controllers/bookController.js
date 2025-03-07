@@ -5,11 +5,14 @@ exports.getBooks = async (req, res) => {
     try {
           const page = parseInt(req.query.page) || 1; 
           const perPage = parseInt(req.query.perPage) || 10;
+          const order = req.query.order || 'createdAt-desc';
+          const [field, direction] = order.split('-');
             const totalItems = await Book.count(); 
             const totalPages = Math.ceil(totalItems / perPage); 
             const books = await Book.findAll({
               offset: (page - 1) * perPage,
               limit: perPage,
+              order: [[field, direction]],
               include: [
                 {
                   model: Image,
@@ -111,7 +114,6 @@ exports.updateBook = async (req, res) => {
 };
 exports.getBooksStats = async (req, res) => {
   try {
-    // res.json('helele ')
     const totalBooks = await Book.count();
     const issuedBooks = await Borrowing.count({where : {status: true}});
     const availableBooks = totalBooks - issuedBooks;
