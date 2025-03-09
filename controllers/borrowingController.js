@@ -1,4 +1,4 @@
-const {Borrowing, Member, Book} = require('../models');
+const {Borrowing, Member, Book, Fine} = require('../models');
 
 const getBorrowings = async (req, res) => {
   try {
@@ -16,6 +16,10 @@ const getBorrowings = async (req, res) => {
               {
                 model: Member,
                 as: "member"
+              },
+              {
+                model: Fine,
+                as: "fine"
               }
             ]
             };
@@ -25,7 +29,15 @@ const getBorrowings = async (req, res) => {
             const totalItems = await Borrowing.count(queryOptions);
             const totalPages = Math.ceil(totalItems / perPage);
             const borrowings = await Borrowing.findAll(queryOptions);
-            res.json({ status:true, page, perPage, totalPages, totalItems, data:borrowings });
+            const borrowingsWithFineStatus = borrowings.map((borrowing) => {
+              const hasPendingFine = borrowing.fine ? !borrowing.fine.isPaid : false;
+              const { borrowings, ...borrowingWithoutFines } = borrowing.toJSON();
+              return {
+                ...borrowingWithoutFines,
+                hasPendingFine,
+              };
+            });
+            res.json({ status:true, page, perPage, totalPages, totalItems, data:borrowingsWithFineStatus });
   } catch (err) {
     res.status(500).json({ status: false, message: err.message });
   }
@@ -61,7 +73,15 @@ const getBorrowingById =  async (req, res) => {
 };
 const deleteBorrowing = async (req, res) => {
     try {
-        const borrowing = await Borrowing.findByPk(req.params.id);
+        const borrowing = await Borrowing.findByPk(req.params.id,{
+          include: {
+            model: Fine,
+            as: "fine"
+          }
+        });
+        if(borrowing.fine && !borrowing.fine.isPaid){
+            res.status(400).json({status: false, message: 'This borrowing has unpaid fine'});
+        }
         await borrowing.destroy();
         res.status(200).json({status: true, message: "Borrowing deleted successfully"});
     } catch (err) {

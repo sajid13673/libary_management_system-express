@@ -34,12 +34,10 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "Book",
       hooks: {
         beforeDestroy: async (book) => {
-          console.log('Book being destroyed'); // Reload the book instance to include its associations 
           const loadedBook = await book.reload({ 
             include: { model: sequelize.models.Image, as: 'images' } 
           }); 
           const images = loadedBook.images; 
-          // console.log(images); 
           if (images) { 
             await Promise.all(images.map(async (image) => { 
               await image.destroy(); 
