@@ -7,9 +7,12 @@ const getMembers = async (req, res) => {
     const perPage = parseInt(req.query.perPage) || 10;
     const totalItems = await Member.count();
     const totalPages = Math.ceil(totalItems / perPage);
+    const order = req.query.order || "createdAt-desc";
+    const [field, direction] = order.split("-");
     const members = await Member.findAll({
       offset: (page - 1) * perPage,
       limit: perPage,
+      order: [[field, direction]],
       include: [
         {
           model: User,
