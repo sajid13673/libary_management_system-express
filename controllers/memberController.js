@@ -1,5 +1,6 @@
 const { Member, User, Image, Borrowing, Book, Fine } = require("../models");
 const { saveFile } = require("../utils/manageFiles");
+const { Op } = require("sequelize");
 
 const getMembers = async (req, res) => {
   try {
@@ -9,7 +10,8 @@ const getMembers = async (req, res) => {
     const totalPages = Math.ceil(totalItems / perPage);
     const order = req.query.order || "createdAt-desc";
     const [field, direction] = order.split("-");
-    const members = await Member.findAll({
+    const searchTerm = req.query.search || "";
+    const queryOptions = {
       offset: (page - 1) * perPage,
       limit: perPage,
       order: [[field, direction]],
@@ -23,7 +25,16 @@ const getMembers = async (req, res) => {
           as: "image",
         },
       ],
-    });
+    };
+    if (searchTerm) {
+      queryOptions.where = {
+        [Op.or]: [
+          { name: { [Op.like]: `%${searchTerm}%` } },
+          { id: { [Op.like]: `%${searchTerm}%` } },
+        ],
+      };
+    }
+    const members = await Member.findAll(queryOptions);
     res.json({
       status: true,
       page,
