@@ -4,6 +4,15 @@ const { Op } = require("sequelize");
 
 const getMembers = async (req, res) => {
   try {
+    if (req.query.all) {
+      const members = await Member.findAll({
+        include: {
+          model: User,
+          as: "user",
+        },
+      });
+      return res.json({ status: true, data: members });
+    }
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.perPage) || 10;
     const totalItems = await Member.count();
@@ -173,7 +182,32 @@ const getMemberById = async (req, res) => {
 
 const deleteMember = async (req, res) => {
   try {
-    const member = await Member.findByPk(req.params.id);
+    const member = await Member.findByPk(req.params.id, {
+      include: {
+        model: Borrowing,
+        as: "borrowings",
+        required: false,
+        include: {
+          model: Fine,
+          as: "fine",
+          required: false,
+        }
+      }
+    });
+    if(!member){
+      res.status(404).json({ status: false, message: "Member not found" });
+      return;
+    }
+    const hasActiveBorrowing = member.borrowings.some(borrowing => borrowing.status === true);
+    if (hasActiveBorrowing) {
+      res.status(400).json({ status: false, message: "Cannot delete member with active borrowings" });
+      return;
+    }
+    const hasPendingFine = member.borrowings.some(borrowing => borrowing.fine ? !borrowing.fine.isPaid : false);
+    if (hasPendingFine) {
+      res.status(400).json({ status: false, message: "Cannot delete member with pending fines" });
+      return;
+    }
     await member.destroy();
     res
       .status(200)
