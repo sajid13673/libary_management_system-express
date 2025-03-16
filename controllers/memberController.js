@@ -6,10 +6,10 @@ const getMembers = async (req, res) => {
   try {
     if (req.query.all) {
       const members = await Member.findAll({
-        include: {
+        include: [{
           model: User,
           as: "user",
-        },
+        }],
       });
       return res.json({ status: true, data: members });
     }
@@ -33,6 +33,10 @@ const getMembers = async (req, res) => {
           model: Image,
           as: "image",
         },
+        {
+          model: Borrowing,
+          as: "borrowings",
+        }
       ],
     };
     if (searchTerm) {
@@ -44,13 +48,23 @@ const getMembers = async (req, res) => {
       };
     }
     const members = await Member.findAll(queryOptions);
+    const membersWithBorrowingStatus = members.map((member) => {
+      const hasActiveBorrowing = member.borrowings.some(
+        (borrowing) => borrowing.status === true
+      );
+      const { borrowings, ...memberWithoutBorrowings } = member.toJSON();
+      return {
+        ...memberWithoutBorrowings,
+        activeBorrowings: hasActiveBorrowing ? true : false,
+      };
+    });
     res.json({
       status: true,
       page,
       perPage,
       totalPages,
       totalItems,
-      data: members,
+      data: membersWithBorrowingStatus,
     });
   } catch (err) {
     res.status(500).json({ status: false, message: err.message });
