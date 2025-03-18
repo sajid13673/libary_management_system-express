@@ -4,12 +4,14 @@ const { Op } = require("sequelize");
 
 const getMembers = async (req, res) => {
   try {
-    if (req.query.all) {
+    if (req.query.all === "true") {
       const members = await Member.findAll({
-        include: [{
-          model: User,
-          as: "user",
-        }],
+        include: [
+          {
+            model: User,
+            as: "user",
+          },
+        ],
       });
       return res.json({ status: true, data: members });
     }
@@ -32,11 +34,18 @@ const getMembers = async (req, res) => {
         {
           model: Image,
           as: "image",
+          required: false,
         },
         {
           model: Borrowing,
           as: "borrowings",
-        }
+          required: false,
+        },
+        {
+          model: Fine,
+          as: "fines",
+          required: false,
+        },
       ],
     };
     if (searchTerm) {
@@ -52,10 +61,12 @@ const getMembers = async (req, res) => {
       const hasActiveBorrowing = member.borrowings.some(
         (borrowing) => borrowing.status === true
       );
+      const pendingFine = member.fines.some((fine) => fine.isPaid === false);
       const { borrowings, ...memberWithoutBorrowings } = member.toJSON();
       return {
         ...memberWithoutBorrowings,
         activeBorrowings: hasActiveBorrowing ? true : false,
+        pendingFines: pendingFine ? true : false,
       };
     });
     res.json({
@@ -205,21 +216,35 @@ const deleteMember = async (req, res) => {
           model: Fine,
           as: "fine",
           required: false,
-        }
-      }
+        },
+      },
     });
-    if(!member){
+    if (!member) {
       res.status(404).json({ status: false, message: "Member not found" });
       return;
     }
-    const hasActiveBorrowing = member.borrowings.some(borrowing => borrowing.status === true);
+    const hasActiveBorrowing = member.borrowings.some(
+      (borrowing) => borrowing.status === true
+    );
     if (hasActiveBorrowing) {
-      res.status(400).json({ status: false, message: "Cannot delete member with active borrowings" });
+      res
+        .status(400)
+        .json({
+          status: false,
+          message: "Cannot delete member with active borrowings",
+        });
       return;
     }
-    const hasPendingFine = member.borrowings.some(borrowing => borrowing.fine ? !borrowing.fine.isPaid : false);
+    const hasPendingFine = member.borrowings.some((borrowing) =>
+      borrowing.fine ? !borrowing.fine.isPaid : false
+    );
     if (hasPendingFine) {
-      res.status(400).json({ status: false, message: "Cannot delete member with pending fines" });
+      res
+        .status(400)
+        .json({
+          status: false,
+          message: "Cannot delete member with pending fines",
+        });
       return;
     }
     await member.destroy();
