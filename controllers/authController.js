@@ -10,6 +10,9 @@ const {
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
+
+const crypto = require("crypto");
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -21,49 +24,112 @@ exports.login = async (req, res) => {
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     const refreshToken = uuidv4();
 
     await UserRefreshToken.create({ userId: user.id, refreshToken });
 
-    res.json({
+    res.cookie("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
       status: true,
       access_token: accessToken,
-      refresh_token: refreshToken,
-      role: user.role,
+      user,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 exports.refreshToken = async (req, res) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies?.refresh_token;
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      message: "Refresh token is missing",
+    });
+  }
+
   try {
     const storedToken = await UserRefreshToken.findOne({
       where: { refreshToken },
     });
+
     if (!storedToken) {
-      return res.status(400).json({ message: "Invalid refresh token" });
+      res.clearCookie("refresh_token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      });
     }
 
     const user = await User.findByPk(storedToken.userId);
+
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      await storedToken.destroy();
+
+      res.clearCookie("refresh_token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+
+      return res.status(401).json({
+        message: "User not found",
+      });
     }
 
+    // Generate a new access token.
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "15m" },
     );
 
-    res.json({ status: true, access_token: accessToken });
+    // Generate a new refresh token.
+    const newRefreshToken = crypto.randomBytes(64).toString("hex");
+
+    // Rotate the refresh token.
+    await storedToken.update({
+      refreshToken: newRefreshToken,
+    });
+
+    // Set the new refresh token as an HttpOnly cookie.
+    res.cookie("refresh_token", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      status: true,
+      access_token: accessToken,
+      user,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Refresh token error:", err);
+
+    return res.status(500).json({
+      message: "Unable to refresh access token",
+    });
   }
 };
+
 exports.logout = async (req, res) => {
   const authHeader = req.headers.authorization;
 
@@ -105,7 +171,7 @@ exports.profile = async (req, res) => {
             model: Borrowing,
             as: "borrowings",
             where: { status: true },
-            required: false, 
+            required: false,
             include: {
               model: Book,
               as: "book",
@@ -123,7 +189,7 @@ exports.profile = async (req, res) => {
               include: {
                 model: Book,
                 as: "book",
-                attributes: ["title", "author"]
+                attributes: ["title", "author"],
               },
             },
           },
