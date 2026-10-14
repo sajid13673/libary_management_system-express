@@ -1,6 +1,5 @@
 const express = require('express');
 const app = express();
-const port = 5001;
 const sequelize = require('./config/database')
 const authRoutes = require('./routes/authRoutes')
 const bookRoutes = require('./routes/bookRoutes')
@@ -15,6 +14,7 @@ const cron = require('node-cron');
 const updateFines = require('./utils/updateFines')
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const port =process.env.PORT ;
 
 app.use(express.json());
 app.use(cookieParser());
