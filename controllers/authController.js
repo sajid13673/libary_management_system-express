@@ -132,30 +132,50 @@ exports.refreshToken = async (req, res) => {
 
 exports.logout = async (req, res) => {
   const authHeader = req.headers.authorization;
+  const refreshToken = req.cookies?.refresh_token;
 
-  if (!authHeader) {
-    return res
-      .status(401)
-      .json({ status: false, message: "Authentication token is missing" });
-  }
-  const token = authHeader.split(" ")[1];
-  // Decode the token to get the expiration time
-  const decoded = jwt.decode(token);
-  if (!decoded) {
-    return res.status(400).json({ status: false, message: "Invalid token" });
-  }
-  const expiresAt = new Date(decoded.exp * 1000);
   try {
-    const { refreshToken } = req.body;
-    // Add the token to the blacklist
-    await BlacklistToken.create({ token, expiresAt });
-    // Delete the refresh token
-    if (refreshToken) {
-      await UserRefreshToken.destroy({ where: { refreshToken } });
+    // Blacklist the access token if provided.
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      const decoded = jwt.decode(token);
+
+      if (decoded?.exp) {
+        const expiresAt = new Date(decoded.exp * 1000);
+
+        await BlacklistToken.create({
+          token,
+          expiresAt,
+        });
+      }
     }
-    res.status(200).json({ status: true, message: "Logged out successfully" });
+
+    // Delete the refresh token from the database.
+    if (refreshToken) {
+      await UserRefreshToken.destroy({
+        where: { refreshToken },
+      });
+    }
+
+    // Clear the refresh-token cookie.
+    res.clearCookie("refresh_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "Logged out successfully",
+    });
   } catch (error) {
-    res.status(500).json({ status: false, message: "Server error", error });
+    console.error("Logout error:", error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+    });
   }
 };
 
