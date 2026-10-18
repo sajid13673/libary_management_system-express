@@ -284,10 +284,26 @@ const updateMember = async (req, res) => {
     res.status(500).json({ status: false, message: err.message });
   }
 };
+const toggleStatus = async (req, res) => {
+  try {
+    const member = await Member.findByPk(req.params.id);
+    console.log('member', member);
+    console.log('member', member.status);
+    
+    member.update({'status': !member.status});
+    console.log('member after update', member.status);
+    res
+      .status(200)
+      .json({ status: true, message: "Member status updated successfully" });
+  } catch(err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+};
 module.exports = {
   getMembers,
   createMember,
   getMemberById,
   deleteMember,
   updateMember,
+  toggleStatus
 };
