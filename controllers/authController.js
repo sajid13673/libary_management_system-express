@@ -239,3 +239,42 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ status: false, message: err.message });
   }
 };
+
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, address, phone_number } = req.body;
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await User.create(
+      {
+        email: req.body.email,
+        password: req.body.password,
+        member: {
+          name: req.body.name,
+          phoneNumber: req.body.phone_number,
+          address: req.body.address,
+        },
+      },
+      {
+        include: {
+          model: Member,
+          as: "member",
+        },
+      },
+    );
+
+    return res.status(201).json({
+      status: true,
+      message: "Registration successful",
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+
+    return res.status(500).json({
+      status: false,
+      message: "An error occurred during registration",
+    });
+  }
+};

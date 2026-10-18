@@ -1,13 +1,16 @@
-const { body, validationResult } = require('express-validator');
-const {User, Member, Book} = require('../models');
+const { body, validationResult } = require("express-validator");
+const { User, Member, Book } = require("../models");
 
-const loginValidationRules = () => {  
+const loginValidationRules = () => {
   return [
-    body('email').isEmail().withMessage('Email is invalid')
-    .notEmpty().withMessage('Email is Required'),
-    body('password').notEmpty().withMessage('Password is required')
+    body("email")
+      .isEmail()
+      .withMessage("Email is invalid")
+      .notEmpty()
+      .withMessage("Email is Required"),
+    body("password").notEmpty().withMessage("Password is required"),
   ];
-}
+};
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -15,118 +18,236 @@ const validate = (req, res, next) => {
   }
   next();
 };
+const registerValidationRules = () => {
+  return [
+    body("name").notEmpty().withMessage("Name is required").trim(),
+
+    body("email")
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Email is invalid")
+      .normalizeEmail(),
+
+    body("password")
+      .notEmpty()
+      .withMessage("Password is required")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters long"),
+
+    body("password_confirmation")
+      .notEmpty()
+      .withMessage("Confirm password is required")
+      .custom((value, { req }) => {
+        if (value !== req.body.password) {
+          throw new Error("Password confirmation does not match password");
+        }
+        return true;
+      }),
+
+    body("address").notEmpty().withMessage("Address is required").trim(),
+
+    body("phone_number")
+      .notEmpty()
+      .withMessage("Phone number is required")
+      .isMobilePhone()
+      .withMessage("Phone number is invalid"),
+      body("email").custom(async (email) => {
+      const user = await User.findOne({ where: { email } });
+      if (user) {
+        throw new Error("Email already exists");
+      }
+    }),
+    body("phone_number").custom(async (PhoneNumber) => {
+      const member = await Member.findOne({ where: { PhoneNumber } });
+      if (member) {
+        throw new Error("Phone number already exists");
+      }
+    }),
+  ];
+};
 const createBookValidationRules = () => {
   return [
-    body('title').notEmpty().withMessage('Title is required')
-    .isLength({max:50}).withMessage('Title can not exceed 50 characters'),
-    body('author').notEmpty().withMessage('Author is required')
-    .isLength({max:50}).withMessage('Author can not exceed 50 characters'),
-    body('year').notEmpty().withMessage('Year is required')
-    .isNumeric().withMessage('Year must be numeric')
-    .isLength({min: 4, max: 4}).withMessage('Enter a valid year'),
-    body('publisher').isLength({max:50}).withMessage('Publisher can not exceed 50 characters'),
+    body("title")
+      .notEmpty()
+      .withMessage("Title is required")
+      .isLength({ max: 50 })
+      .withMessage("Title can not exceed 50 characters"),
+    body("author")
+      .notEmpty()
+      .withMessage("Author is required")
+      .isLength({ max: 50 })
+      .withMessage("Author can not exceed 50 characters"),
+    body("year")
+      .notEmpty()
+      .withMessage("Year is required")
+      .isNumeric()
+      .withMessage("Year must be numeric")
+      .isLength({ min: 4, max: 4 })
+      .withMessage("Enter a valid year"),
+    body("publisher")
+      .isLength({ max: 50 })
+      .withMessage("Publisher can not exceed 50 characters"),
   ];
 };
 const updateBookValidationRules = () => {
   return [
-    body('title').optional().notEmpty().withMessage('Title is required')
-    .isLength({max:50}).withMessage('Title can not exceed 50 characters'),
-    body('author').optional().notEmpty().withMessage('Author is required')
-    .isLength({max:50}).withMessage('Author can not exceed 50 characters'),
-    body('year').optional().notEmpty().withMessage('Year is required')
-    .isNumeric().withMessage('Year must be numeric')
-    .isLength({min: 4, max: 4}).withMessage('Enter a valid year'),
-    body('publisher').isLength({max:50}).withMessage('Publisher can not exceed 50 characters'),
-    body('status').optional().notEmpty().withMessage('Status cannot be empty').isBoolean().withMessage('Status must be a boolean'),
+    body("title")
+      .optional()
+      .notEmpty()
+      .withMessage("Title is required")
+      .isLength({ max: 50 })
+      .withMessage("Title can not exceed 50 characters"),
+    body("author")
+      .optional()
+      .notEmpty()
+      .withMessage("Author is required")
+      .isLength({ max: 50 })
+      .withMessage("Author can not exceed 50 characters"),
+    body("year")
+      .optional()
+      .notEmpty()
+      .withMessage("Year is required")
+      .isNumeric()
+      .withMessage("Year must be numeric")
+      .isLength({ min: 4, max: 4 })
+      .withMessage("Enter a valid year"),
+    body("publisher")
+      .isLength({ max: 50 })
+      .withMessage("Publisher can not exceed 50 characters"),
+    body("status")
+      .optional()
+      .notEmpty()
+      .withMessage("Status cannot be empty")
+      .isBoolean()
+      .withMessage("Status must be a boolean"),
   ];
 };
 const createMemberValidationRules = () => {
   return [
-    body('email').notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Please enter a valid email address'),
-    body('password').notEmpty().withMessage('Password is required'),
-    body('name').notEmpty().withMessage('Name is required')
-    .isLength({max:50}).withMessage('Name can not exceed 50 characters'),
-    body('address').notEmpty().withMessage('Address is required'),
-    body('phoneNumber').notEmpty().withMessage('Phone Number is required')
-    .isNumeric().withMessage('Phone number must be numeric')
-    .isLength({min: 10, max: 13}).withMessage('Please enter a valid phone number'),
-    body('email').custom(async (email) => {
+    body("email")
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Please enter a valid email address"),
+    body("password").notEmpty().withMessage("Password is required"),
+    body("name")
+      .notEmpty()
+      .withMessage("Name is required")
+      .isLength({ max: 50 })
+      .withMessage("Name can not exceed 50 characters"),
+    body("address").notEmpty().withMessage("Address is required"),
+    body("phoneNumber")
+      .notEmpty()
+      .withMessage("Phone Number is required")
+      .isNumeric()
+      .withMessage("Phone number must be numeric")
+      .isLength({ min: 10, max: 13 })
+      .withMessage("Please enter a valid phone number"),
+    body("email").custom(async (email) => {
       const user = await User.findOne({ where: { email } });
       if (user) {
-        throw new Error('Email already exists');
+        throw new Error("Email already exists");
       }
     }),
-    body('phoneNumber').custom(async (PhoneNumber) => {
+    body("phoneNumber").custom(async (PhoneNumber) => {
       const member = await Member.findOne({ where: { PhoneNumber } });
       if (member) {
-        throw new Error('Phone number already exists');
+        throw new Error("Phone number already exists");
       }
-    })
+    }),
   ];
 };
 const updateMemberValidationRules = () => {
   return [
-    body('name').notEmpty().withMessage('Name is required')
-    .isLength({max:50}).withMessage('Name can not exceed 50 characters'),
-    body('address').notEmpty().withMessage('Address is required'),
-    body('phoneNumber').notEmpty().withMessage('Phone Number is required')
-    .isNumeric().withMessage('Phone number must be numeric')
-    .isLength({min: 10, max: 13}).withMessage('Please enter a valid phone number'),
-    body('phoneNumber').custom(async (phoneNumber, { req }) => { 
-      const member = await Member.findOne({ where: { phoneNumber } }); 
-      if (member && member.id !== parseInt(req.params.id)) { 
-        throw new Error('Phone Number exists'); 
-      } 
-    })
+    body("name")
+      .notEmpty()
+      .withMessage("Name is required")
+      .isLength({ max: 50 })
+      .withMessage("Name can not exceed 50 characters"),
+    body("address").notEmpty().withMessage("Address is required"),
+    body("phoneNumber")
+      .notEmpty()
+      .withMessage("Phone Number is required")
+      .isNumeric()
+      .withMessage("Phone number must be numeric")
+      .isLength({ min: 10, max: 13 })
+      .withMessage("Please enter a valid phone number"),
+    body("phoneNumber").custom(async (phoneNumber, { req }) => {
+      const member = await Member.findOne({ where: { phoneNumber } });
+      if (member && member.id !== parseInt(req.params.id)) {
+        throw new Error("Phone Number exists");
+      }
+    }),
   ];
 };
 const createBorrowingValidationRules = () => {
   return [
-    body('returnDate').optional().isISO8601().withMessage('Please enter a valid date'),
-    body('dueDate').optional().isISO8601().withMessage('Please enter a valid date'),
-    body('bookId').notEmpty().withMessage('Book ID is required'),
-    body('memberId').notEmpty().withMessage('Member ID is required'),
-    body('bookId').custom(async (bookId) => {
+    body("returnDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Please enter a valid date"),
+    body("dueDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Please enter a valid date"),
+    body("bookId").notEmpty().withMessage("Book ID is required"),
+    body("memberId").notEmpty().withMessage("Member ID is required"),
+    body("bookId").custom(async (bookId) => {
       const book = await Book.findByPk(bookId);
       if (!book) {
-        throw new Error('Book does not exist');
+        throw new Error("Book does not exist");
       }
     }),
-    body('memberId').custom(async (memberId) => {
+    body("memberId").custom(async (memberId) => {
       const member = await Member.findByPk(memberId);
       if (!member) {
-        throw new Error('Member does not exist');
+        throw new Error("Member does not exist");
       }
     }),
-  ]
-}
+  ];
+};
 const updateBorrowingValidationRules = () => {
   return [
-    body('returnDate').optional().isISO8601().withMessage('Please enter a valid date'),
-    body('dueDate').optional().isISO8601().withMessage('Please enter a valid date'),
-    body('status').optional().notEmpty().withMessage('Status can not be empty').isBoolean().withMessage('Status must be a boolean')
-  ]
-}
+    body("returnDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Please enter a valid date"),
+    body("dueDate")
+      .optional()
+      .isISO8601()
+      .withMessage("Please enter a valid date"),
+    body("status")
+      .optional()
+      .notEmpty()
+      .withMessage("Status can not be empty")
+      .isBoolean()
+      .withMessage("Status must be a boolean"),
+  ];
+};
 const changePasswordValidationRules = () => {
   return [
-    body('currentPassword').notEmpty().withMessage('Current Password is required'),
-    body('newPassword').notEmpty().withMessage('New Password is required'),
-    body('confirmPassword').notEmpty().withMessage('Confirm Password is required'),
-    body('newPassword').custom((password, { req }) => {
+    body("currentPassword")
+      .notEmpty()
+      .withMessage("Current Password is required"),
+    body("newPassword").notEmpty().withMessage("New Password is required"),
+    body("confirmPassword")
+      .notEmpty()
+      .withMessage("Confirm Password is required"),
+    body("newPassword").custom((password, { req }) => {
       if (password === req.body.currentPassword) {
-        throw new Error('New password cannot be the same as old password');
+        throw new Error("New password cannot be the same as old password");
       }
       return true;
     }),
-    body('confirmPassword').custom((confirmPassword, { req }) => {
+    body("confirmPassword").custom((confirmPassword, { req }) => {
       if (confirmPassword !== req.body.newPassword) {
-        throw new Error('Confirm Password does not match the New Password');
+        throw new Error("Confirm Password does not match the New Password");
       }
       return true;
-    })
-  ]
-}
+    }),
+  ];
+};
 
 module.exports = {
   loginValidationRules,
@@ -137,5 +258,6 @@ module.exports = {
   createBorrowingValidationRules,
   updateBorrowingValidationRules,
   changePasswordValidationRules,
+  registerValidationRules,
   validate,
 };
