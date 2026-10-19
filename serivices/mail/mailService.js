@@ -2,6 +2,7 @@ const transporter = require("../../config/mail");
 const activationPendingTemplate = require("./templates/activationPending");
 const accountActivatedTemplate = require("./templates/accountActivated");
 const accountDeactivatedTemplate = require("./templates/accountDeactivated");
+const accountCreatedByAdminTemplate = require("./templates/accountCreatedByAdmin");
 
 const mailService = {
   sendActivationPending: async (toEmail, userName) => {
@@ -25,6 +26,14 @@ const mailService = {
     const template = accountDeactivatedTemplate(userName);
     return transporter.sendMail({
       from: `"Library Admin" <${process.env.MAIL_FROM_ADDRESS}>`,
+      to: toEmail,
+      ...template
+    });
+  },
+   sendAccountCredentials: async (toEmail, userName, temporaryPassword) => {
+    const template = accountCreatedByAdminTemplate(userName, toEmail, temporaryPassword);
+    return transporter.sendMail({
+      from: `"Library Admin" <${process.env.SMTP_USER}>`,
       to: toEmail,
       ...template
     });
