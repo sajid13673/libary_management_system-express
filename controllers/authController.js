@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 
 const crypto = require("crypto");
+const mailService = require("../serivices/mail/mailService");
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -278,6 +279,8 @@ exports.register = async (req, res) => {
         },
       },
     );
+
+    await mailService.sendActivationPending(user.email, user.member.name);
 
     return res.status(201).json({
       status: true,
