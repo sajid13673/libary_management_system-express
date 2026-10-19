@@ -16,11 +16,25 @@ const crypto = require("crypto");
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email },
+      include: {
+        model: Member,
+        as: "member",
+        required: false,
+      },
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-
+    if (!user.member.status) {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Your account is currently inactive. Please contact the administrator to restore or grant access.",
+        });
+    }
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
