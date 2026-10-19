@@ -1,5 +1,5 @@
 const express = require('express');
-const { getMembers, createMember,getMemberById, deleteMember, updateMember } = require('../controllers/memberController');
+const { getMembers, createMember,getMemberById, deleteMember, updateMember, toggleStatus } = require('../controllers/memberController');
 const router = express.Router();
 const {validate, createMemberValidationRules, updateMemberValidationRules} = require('../middlewares/validationMiddlewares');
 const multer = require('multer');
@@ -12,5 +12,6 @@ router.post('/', upload.single('image'), createMemberValidationRules(), validate
 router.get('/:id', getMemberById);
 router.delete('/:id', deleteMember);
 router.put('/:id', upload.single('image'), updateMemberValidationRules(), validate, updateMember);
+router.put('/:id/status', toggleStatus);
 
 module.exports = router;

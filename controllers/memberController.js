@@ -1,4 +1,5 @@
 const { Member, User, Image, Borrowing, Book, Fine } = require("../models");
+const mailService = require("../serivices/mail/mailService");
 const { saveFile } = require("../utils/manageFiles");
 const { Op } = require("sequelize");
 
@@ -59,7 +60,7 @@ const getMembers = async (req, res) => {
     const members = await Member.findAll(queryOptions);
     const membersWithBorrowingStatus = members.map((member) => {
       const hasActiveBorrowing = member.borrowings.some(
-        (borrowing) => borrowing.status === true
+        (borrowing) => borrowing.status === true,
       );
       const pendingFine = member.fines.some((fine) => fine.isPaid === false);
       const { borrowings, ...memberWithoutBorrowings } = member.toJSON();
@@ -101,7 +102,7 @@ const createMember = async (req, res) => {
           model: Member,
           as: "member",
         },
-      }
+      },
     );
     if (file) {
       const originalname = file.originalname;
@@ -178,7 +179,7 @@ const getMemberById = async (req, res) => {
             ...borrowingWithoutFines,
             hasPendingFine,
           };
-        }
+        },
       );
 
       memberData.borrowings = borrowingsWithFineStatus;
@@ -224,27 +225,23 @@ const deleteMember = async (req, res) => {
       return;
     }
     const hasActiveBorrowing = member.borrowings.some(
-      (borrowing) => borrowing.status === true
+      (borrowing) => borrowing.status === true,
     );
     if (hasActiveBorrowing) {
-      res
-        .status(400)
-        .json({
-          status: false,
-          message: "Cannot delete member with active borrowings",
-        });
+      res.status(400).json({
+        status: false,
+        message: "Cannot delete member with active borrowings",
+      });
       return;
     }
     const hasPendingFine = member.borrowings.some((borrowing) =>
-      borrowing.fine ? !borrowing.fine.isPaid : false
+      borrowing.fine ? !borrowing.fine.isPaid : false,
     );
     if (hasPendingFine) {
-      res
-        .status(400)
-        .json({
-          status: false,
-          message: "Cannot delete member with pending fines",
-        });
+      res.status(400).json({
+        status: false,
+        message: "Cannot delete member with pending fines",
+      });
       return;
     }
     await member.destroy();
@@ -284,10 +281,34 @@ const updateMember = async (req, res) => {
     res.status(500).json({ status: false, message: err.message });
   }
 };
+const toggleStatus = async (req, res) => {
+  try {
+    const member = await Member.findByPk(req.params.id, {
+      include: {
+        model: User,
+        as: "user",
+      },
+    });
+
+    member.update({ status: !member.status });
+    console.log("member email", member.user?.email);
+
+    if (member.status) {
+      await mailService.sendAccountActivated(member.user.email, member.name);
+    }
+    await mailService.sendAccountDeactivated(member.user.email, member.name);
+    res
+      .status(200)
+      .json({ status: true, message: "Member status updated successfully" });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+};
 module.exports = {
   getMembers,
   createMember,
   getMemberById,
   deleteMember,
   updateMember,
+  toggleStatus,
 };
