@@ -25,10 +25,11 @@ exports.login = async (req, res) => {
         required: false,
       },
     });
+
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-    if (!user.member.status) {
+    if (user.member && !user.member.status) {
       return res
         .status(403)
         .json({
