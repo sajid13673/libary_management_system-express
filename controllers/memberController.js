@@ -2,6 +2,7 @@ const { Member, User, Image, Borrowing, Book, Fine } = require("../models");
 const mailService = require("../serivices/mail/mailService");
 const { saveFile } = require("../utils/manageFiles");
 const { Op } = require("sequelize");
+const { generateTemporaryPassword } = require("../utils/passwordGenerator");
 
 const getMembers = async (req, res) => {
   try {
@@ -85,12 +86,13 @@ const getMembers = async (req, res) => {
 
 const createMember = async (req, res) => {
   try {
-    console.log(req.file);
+    const tempPassword = generateTemporaryPassword();
+    
     const file = req.file;
     const user = await User.create(
       {
         email: req.body.email,
-        password: req.body.password,
+        password: tempPassword,
         member: {
           name: req.body.name,
           phoneNumber: req.body.phoneNumber,
@@ -111,6 +113,7 @@ const createMember = async (req, res) => {
       await user.member.reload();
       await user.member.setImage(image);
     }
+    mailService.sendAccountCredentials(user.email, user.member.name, tempPassword)
 
     res
       .status(200)
