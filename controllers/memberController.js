@@ -87,7 +87,6 @@ const getMembers = async (req, res) => {
 const createMember = async (req, res) => {
   try {
     const tempPassword = generateTemporaryPassword();
-    
     const file = req.file;
     const user = await User.create(
       {
@@ -113,7 +112,11 @@ const createMember = async (req, res) => {
       await user.member.reload();
       await user.member.setImage(image);
     }
-    mailService.sendAccountCredentials(user.email, user.member.name, tempPassword)
+    mailService.sendAccountCredentials(
+      user.email,
+      user.member.name,
+      tempPassword,
+    );
 
     res
       .status(200)
@@ -150,9 +153,19 @@ const getMemberById = async (req, res) => {
             ],
           },
         ]
-      : [];
-
-    console.log(includeBorrowings);
+      : [
+          {
+            model: User,
+            as: "user",
+            required: false,
+            attributes: ["email"],
+          },
+          {
+            model: Image,
+            as: "image",
+            required: false,
+          },
+        ];
 
     const member = await Member.findByPk(req.params.id, {
       include: includeBorrowings,
