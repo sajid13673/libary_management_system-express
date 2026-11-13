@@ -16,6 +16,7 @@ exports.getBooks = async (req, res) => {
         {
           model: Image,
           as: "images",
+          attributes: ["id", "url"]
         },
         {
           model: Borrowing,
