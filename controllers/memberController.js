@@ -3,6 +3,9 @@ const mailService = require("../serivices/mail/mailService");
 const { saveFile } = require("../utils/manageFiles");
 const { Op } = require("sequelize");
 const { generateTemporaryPassword } = require("../utils/passwordGenerator");
+const excludedAtts = {
+  exclude: ["createdAt", "updatedAt"],
+};
 
 const getMembers = async (req, res) => {
   try {
@@ -12,6 +15,7 @@ const getMembers = async (req, res) => {
           {
             model: User,
             as: "user",
+            attributes: ["id", "email"]
           },
         ],
       });
@@ -28,25 +32,30 @@ const getMembers = async (req, res) => {
       offset: (page - 1) * perPage,
       limit: perPage,
       order: [[field, direction]],
+      attributes: {exclude: ["updatedAt"]},
       include: [
         {
           model: User,
           as: "user",
+          attributes: ["id", "email"],
         },
         {
           model: Image,
           as: "image",
           required: false,
+          attributes: excludedAtts,
         },
         {
           model: Borrowing,
           as: "borrowings",
           required: false,
+          attributes: excludedAtts,
         },
         {
           model: Fine,
           as: "fines",
           required: false,
+          attributes: excludedAtts,
         },
       ],
     };
