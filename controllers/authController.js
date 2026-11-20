@@ -13,9 +13,8 @@ const { v4: uuidv4 } = require("uuid");
 
 const crypto = require("crypto");
 const mailService = require("../serivices/mail/mailService");
-const excludedAtts = {
-  exclude: ["createdAt", "updatedAt"],
-};
+const { DEFAULT_EXCLUDED_ATTRIBUTES } = require("../utils/dbConstants");
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -198,11 +197,13 @@ exports.logout = async (req, res) => {
 exports.profile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ["id", "email", "name", "role"],
+      attributes: {
+        exclude: [...DEFAULT_EXCLUDED_ATTRIBUTES.exclude, "password"],
+      },
       include: {
         model: Member,
         as: "member",
-        attributes: excludedAtts,
+        attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
         required: false,
         include: [
           {
@@ -210,18 +211,18 @@ exports.profile = async (req, res) => {
             as: "borrowings",
             where: { status: true },
             required: false,
-            attributes: excludedAtts,
+            attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
             include: {
               model: Book,
               as: "book",
-              attributes: excludedAtts,
+              attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
             },
           },
           {
             model: Fine,
             as: "fines",
             required: false,
-            attributes: excludedAtts,
+            attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
             where: { isPaid: false },
             include: {
               model: Borrowing,
