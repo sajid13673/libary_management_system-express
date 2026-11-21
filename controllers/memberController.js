@@ -3,6 +3,7 @@ const mailService = require("../serivices/mail/mailService");
 const { saveFile } = require("../utils/manageFiles");
 const { Op } = require("sequelize");
 const { generateTemporaryPassword } = require("../utils/passwordGenerator");
+const { DEFAULT_EXCLUDED_ATTRIBUTES } = require("../utils/dbConstants");
 
 const getMembers = async (req, res) => {
   try {
@@ -12,6 +13,7 @@ const getMembers = async (req, res) => {
           {
             model: User,
             as: "user",
+            attributes: ["id", "email"],
           },
         ],
       });
@@ -28,25 +30,30 @@ const getMembers = async (req, res) => {
       offset: (page - 1) * perPage,
       limit: perPage,
       order: [[field, direction]],
+      attributes: { exclude: ["updatedAt"] },
       include: [
         {
           model: User,
           as: "user",
+          attributes: ["id", "email"],
         },
         {
           model: Image,
           as: "image",
           required: false,
+          attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
         },
         {
           model: Borrowing,
           as: "borrowings",
           required: false,
+          attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
         },
         {
           model: Fine,
           as: "fines",
           required: false,
+          attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
         },
       ],
     };
@@ -87,7 +94,7 @@ const getMembers = async (req, res) => {
 const createMember = async (req, res) => {
   try {
     const tempPassword = generateTemporaryPassword();
-    
+
     const file = req.file;
     const user = await User.create(
       {
@@ -113,7 +120,11 @@ const createMember = async (req, res) => {
       await user.member.reload();
       await user.member.setImage(image);
     }
-    mailService.sendAccountCredentials(user.email, user.member.name, tempPassword)
+    mailService.sendAccountCredentials(
+      user.email,
+      user.member.name,
+      tempPassword,
+    );
 
     res
       .status(200)

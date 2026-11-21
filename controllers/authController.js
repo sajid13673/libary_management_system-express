@@ -13,6 +13,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const crypto = require("crypto");
 const mailService = require("../serivices/mail/mailService");
+const { DEFAULT_EXCLUDED_ATTRIBUTES } = require("../utils/dbConstants");
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -30,12 +31,10 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
     if (user.member && !user.member.status) {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Your account is currently inactive. Please contact the administrator to restore or grant access.",
-        });
+      return res.status(403).json({
+        message:
+          "Your account is currently inactive. Please contact the administrator to restore or grant access.",
+      });
     }
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
@@ -198,9 +197,13 @@ exports.logout = async (req, res) => {
 exports.profile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
+      attributes: {
+        exclude: [...DEFAULT_EXCLUDED_ATTRIBUTES.exclude, "password"],
+      },
       include: {
         model: Member,
         as: "member",
+        attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
         required: false,
         include: [
           {
@@ -208,15 +211,18 @@ exports.profile = async (req, res) => {
             as: "borrowings",
             where: { status: true },
             required: false,
+            attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
             include: {
               model: Book,
               as: "book",
+              attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
             },
           },
           {
             model: Fine,
             as: "fines",
             required: false,
+            attributes: DEFAULT_EXCLUDED_ATTRIBUTES,
             where: { isPaid: false },
             include: {
               model: Borrowing,

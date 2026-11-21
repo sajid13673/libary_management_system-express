@@ -1,6 +1,7 @@
 const { Book, Image, Borrowing } = require("../models");
 const { saveFile } = require("../utils/manageFiles");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize"); // Ensure Sequelize is imported alongside Op
+
 exports.getBooks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -8,14 +9,55 @@ exports.getBooks = async (req, res) => {
     const order = req.query.order || "createdAt-desc";
     const [field, direction] = order.split("-");
     const searchTerm = req.query.search || "";
+    const borrowStatus = req.query.borrStatus || "all"; // 'all', 'available', 'unavailable'
+
+    const whereConditions = [];
+
+    // 1. Search filter
+    if (searchTerm) {
+      whereConditions.push({
+        [Op.or]: [
+          { title: { [Op.like]: `%${searchTerm}%` } },
+          { author: { [Op.like]: `%${searchTerm}%` } },
+          { publisher: { [Op.like]: `%${searchTerm}%` } },
+        ],
+      });
+    }
+
+    // 2. Borrow status filter (Database-level so pagination remains accurate)
+    // Note: Adjust 'Borrowings' and 'bookId' below if your actual MySQL table/foreign-key names differ
+    const activeBorrowingSubquery = `
+      SELECT 1 FROM Borrowings 
+      WHERE Borrowings.bookId = Book.id 
+      AND Borrowings.status = true
+    `;
+
+    if (borrowStatus === "unavailable") {
+      // Books that HAVE at least one active borrowing (activeBorrowings === true)
+      whereConditions.push(
+        Sequelize.literal(`EXISTS (${activeBorrowingSubquery})`),
+      );
+    } else if (borrowStatus === "available") {
+      // Books that DO NOT have any active borrowings (activeBorrowings === false)
+      whereConditions.push(
+        Sequelize.literal(`NOT EXISTS (${activeBorrowingSubquery})`),
+      );
+    }
+
+    const whereClause =
+      whereConditions.length > 0 ? { [Op.and]: whereConditions } : {};
+
     const queryOptions = {
+      where: whereClause,
       offset: (page - 1) * perPage,
       limit: perPage,
       order: [[field, direction]],
+      attributes: { exclude: ["updatedAt"] },
       include: [
         {
           model: Image,
           as: "images",
+          attributes: ["id", "url"],
         },
         {
           model: Borrowing,
@@ -23,28 +65,22 @@ exports.getBooks = async (req, res) => {
         },
       ],
     };
-    if (searchTerm) {
-      queryOptions.where = {
-        [Op.or]: [
-          { title: { [Op.like]: `%${searchTerm}%` } },
-          { author: { [Op.like]: `%${searchTerm}%` } },
-          { publisher: { [Op.like]: `%${searchTerm}%` } },
-        ],
-      };
-    }
-    const totalItems = await Book.count({ where: queryOptions.where });
+
+    const totalItems = await Book.count({ where: whereClause });
     const totalPages = Math.ceil(totalItems / perPage);
     const books = await Book.findAll(queryOptions);
+
     const booksWithBorrowingStatus = books.map((book) => {
       const hasActiveBorrowing = book.borrowings.some(
-        (borrowing) => borrowing.status === true
+        (borrowing) => borrowing.status === true,
       );
       const { borrowings, ...bookWithoutBorrowings } = book.toJSON();
       return {
         ...bookWithoutBorrowings,
-        activeBorrowings: hasActiveBorrowing ? true : false,
+        activeBorrowings: hasActiveBorrowing,
       };
     });
+
     res.json({
       status: true,
       page,
@@ -57,6 +93,7 @@ exports.getBooks = async (req, res) => {
     res.status(500).json({ status: false, message: err.message });
   }
 };
+
 exports.createBook = async (req, res) => {
   try {
     const file = req.file;
@@ -123,7 +160,7 @@ exports.updateBook = async (req, res) => {
         await Promise.all(
           images.map(async (image) => {
             await image.destroy();
-          })
+          }),
         );
       }
       const image = await Image.create(savedFile);
