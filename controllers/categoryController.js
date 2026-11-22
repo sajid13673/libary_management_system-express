@@ -5,10 +5,10 @@ const createCategory = async (req, res) => {
     const { name } = req.body;
 
     // 1. Validate presence, type, and non-empty string
-    if (!name || typeof name !== 'string' || !name.trim()) {
+    if (!name || typeof name !== "string" || !name.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Category name is required and must be a non-empty string.'
+        message: "Category name is required and must be a non-empty string.",
       });
     }
 
@@ -17,7 +17,7 @@ const createCategory = async (req, res) => {
     if (trimmedName.length > 255) {
       return res.status(400).json({
         success: false,
-        message: 'Category name must not exceed 255 characters.'
+        message: "Category name must not exceed 255 characters.",
       });
     }
 
@@ -26,24 +26,50 @@ const createCategory = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      data: category
+      data: category,
     });
   } catch (error) {
     // 4. Handle duplicate category name cleanly
-    if (error.name === 'SequelizeUniqueConstraintError') {
+    if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(409).json({
         success: false,
-        message: 'Category with this name already exists.'
+        message: "Category with this name already exists.",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: 'Failed to create category.',
-      error: error.message
+      message: "Failed to create category.",
+      error: error.message,
     });
   }
 };
 
+const getCategories = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.perPage) || 10;
 
-module.exports = { createCategory };
+    const queryOptions = {
+      offset: (page - 1) * perPage,
+      limit: perPage,
+    };
+
+    const totalItems = await Category.count(queryOptions);
+    const totalPages = Math.ceil(totalItems / perPage);
+    const categories = await Category.findAll(queryOptions);
+
+    res.json({
+      status: true,
+      page,
+      perPage,
+      totalPages,
+      totalItems,
+      data: categories,
+    });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
+  }
+};
+
+module.exports = { createCategory, getCategories };
