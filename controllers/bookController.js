@@ -1,4 +1,4 @@
-const { Book, Image, Borrowing } = require("../models");
+const { Book, Image, Borrowing, Category } = require("../models");
 const { saveFile } = require("../utils/manageFiles");
 const { Op, Sequelize } = require("sequelize"); // Ensure Sequelize is imported alongside Op
 
@@ -97,14 +97,26 @@ exports.getBooks = async (req, res) => {
 exports.createBook = async (req, res) => {
   try {
     const file = req.file;
-    console.log(file);
-    const book = await Book.create(req.body);
+    const { categories, ...bookData } = req.body;
+
+    const book = await Book.create(bookData);
     if (file) {
       const originalname = file.originalname;
       const savedFile = await saveFile(file.path, originalname, "books");
       const image = await Image.create(savedFile);
       await book.addImage(image);
     }
+    console.log("categories : ", categories);
+    if (categories) {
+      const categoryIds = Array.isArray(categories)
+        ? categories.map(Number)
+        : String(categories).split(",").filter(Boolean).map(Number);
+
+      if (categoryIds.length > 0) {
+        await book.setCategories(categoryIds);
+      }
+    }
+
     res
       .status(201)
       .json({ status: true, message: "Book created successfully" });
@@ -127,10 +139,16 @@ exports.deleteBook = async (req, res) => {
 exports.getBookById = async (req, res) => {
   try {
     const book = await Book.findByPk(req.params.id, {
-      include: {
-        model: Image,
-        as: "images",
-      },
+      include: [
+        {
+          model: Image,
+          as: "images",
+        },
+        {
+          model: Category,
+          as: "categories",
+        },
+      ],
     });
     res.status(200).json({ status: true, data: book });
   } catch (err) {
@@ -139,17 +157,36 @@ exports.getBookById = async (req, res) => {
 };
 exports.updateBook = async (req, res) => {
   try {
+    const { categories, ...bookData } = req.body;
+
     const book = await Book.findByPk(req.params.id, {
-      include: {
-        model: Image,
-        as: "images",
-      },
+      include: [
+        {
+          model: Image,
+          as: "images",
+        },
+        {
+          model: Category,
+          as: "categories",
+        },
+      ],
     });
+
     if (!book) {
       res.status(404).json({ status: false, message: "Book not found" });
       return;
     }
-    await book.update(req.body);
+
+    await book.update(bookData);
+
+    if (categories !== undefined) {
+      const categoryIds = Array.isArray(categories)
+        ? categories.map(Number)
+        : String(categories).split(",").filter(Boolean).map(Number);
+
+      await book.setCategories(categoryIds);
+    }
+
     if (req.file) {
       const originalname = req.file.originalname;
       const savedFile = await saveFile(req.file.path, originalname, "books");

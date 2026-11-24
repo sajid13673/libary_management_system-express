@@ -12,6 +12,13 @@ module.exports = (sequelize, DataTypes) => {
         as: 'images',
         onDelete: 'CASCADE'
       });
+      Book.belongsToMany(models.Category,{
+        through: 'BookCategory',
+        foreignKey: 'bookId',
+        otherKey: 'categoryId',
+        as: 'categories',
+        onDelete: 'CASCADE'
+      });
       Book.hasMany(models.Borrowing, {
         foreignKey: 'bookId',
         as: 'borrowings'
@@ -28,6 +35,8 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
+      isbn:DataTypes.STRING,
+      summary:DataTypes.STRING,
     },
     {
       sequelize,
