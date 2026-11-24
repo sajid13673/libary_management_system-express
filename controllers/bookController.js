@@ -97,14 +97,26 @@ exports.getBooks = async (req, res) => {
 exports.createBook = async (req, res) => {
   try {
     const file = req.file;
-    console.log(file);
-    const book = await Book.create(req.body);
+    const { categories, ...bookData } = req.body;
+
+    const book = await Book.create(bookData);
     if (file) {
       const originalname = file.originalname;
       const savedFile = await saveFile(file.path, originalname, "books");
       const image = await Image.create(savedFile);
       await book.addImage(image);
     }
+    console.log("categories : ", categories);
+    if (categories) {
+      const categoryIds = Array.isArray(categories)
+        ? categories.map(Number)
+        : String(categories).split(",").filter(Boolean).map(Number);
+
+      if (categoryIds.length > 0) {
+        await book.setCategories(categoryIds);
+      }
+    }
+
     res
       .status(201)
       .json({ status: true, message: "Book created successfully" });

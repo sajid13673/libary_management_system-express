@@ -50,6 +50,11 @@ const getCategories = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.perPage) || 10;
 
+    if (req.query.noPaginate === "true") {
+      const allCategories = await Category.findAll();
+      return res.json({ status: true, data: allCategories });
+    }
+
     const queryOptions = {
       offset: (page - 1) * perPage,
       limit: perPage,
